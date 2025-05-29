@@ -1,62 +1,34 @@
 import sys
-import sqlite3
-from PyQt5 import QtWidgets
-from form1 import Ui_Dialog  # form1.py must be in the same folder
+from PyQt5.QtWidgets import QApplication, QStackedWidget
+from db_setup import init_db
+from signup import SignupScreen
+from login import LoginScreen
+from calculator import CalculatorScreen
 
-class MyApp(QtWidgets.QDialog):
+class App(QStackedWidget):
     def __init__(self):
         super().__init__()
-        self.ui = Ui_Dialog()
-        self.ui.setupUi(self)
 
-        # Connect Save button
-        self.ui.pushButton.clicked.connect(self.save_data)
+        self.signup_screen = SignupScreen(self.show_login)
+        self.login_screen = LoginScreen(self.show_calculator)
+        self.calculator_screen = CalculatorScreen()
 
-        # Create database table if not exists
-        self.create_table()
+        self.addWidget(self.signup_screen)
+        self.addWidget(self.login_screen)
+        self.addWidget(self.calculator_screen)
 
-    def create_table(self):
-        conn = sqlite3.connect("userdata.db")
-        cur = conn.cursor()
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                first_name TEXT,
-                last_name TEXT,
-                email TEXT,
-                gender TEXT
-            )
-        """)
-        conn.commit()
-        conn.close()
+        self.setCurrentWidget(self.signup_screen)
 
-    def save_data(self):
-        first = self.ui.lineEdit_first.text()
-        last = self.ui.lineEdit_last.text()
-        email = self.ui.lineEdit_email.text()
-        gender = self.ui.comboBox.currentText()
+    def show_login(self):
+        self.setCurrentWidget(self.login_screen)
 
-        if first and last and email:
-            conn = sqlite3.connect("userdata.db")
-            cur = conn.cursor()
-            cur.execute("INSERT INTO users (first_name, last_name, email, gender) VALUES (?, ?, ?, ?)",
-                        (first, last, email, gender))
-            conn.commit()
-            conn.close()
-            QtWidgets.QMessageBox.information(self, "Success", "Data saved successfully!")
-            self.clear_fields()
-        else:
-            QtWidgets.QMessageBox.warning(self, "Error", "Please fill all the fields.")
-
-    def clear_fields(self):
-        self.ui.lineEdit_first.clear()
-        self.ui.lineEdit_last.clear()
-        self.ui.lineEdit_email.clear()
-        self.ui.comboBox.setCurrentIndex(0)
+    def show_calculator(self):
+        self.setCurrentWidget(self.calculator_screen)
 
 if __name__ == "__main__":
-    app = QtWidgets.QApplication(sys.argv)
-    window = MyApp()
+    init_db()
+    app = QApplication(sys.argv)
+    window = App()
+    window.setFixedSize(300, 400)
     window.show()
     sys.exit(app.exec_())
-
